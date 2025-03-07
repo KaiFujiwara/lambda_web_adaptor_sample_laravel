@@ -42,6 +42,10 @@ jobs:
           ECR_REPOSITORY: laravel-lambda
           IMAGE_TAG: ${{ github.sha }}
         run: |
+          # ECRにログイン
+          aws ecr get-login-password --region ${{ env.AWS_DEFAULT_REGION }} | docker login --username AWS --password-stdin ${{ env.ECR_REGISTRY }}
+          
+          # イメージのビルドとプッシュ
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
