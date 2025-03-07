@@ -65,6 +65,9 @@ jobs:
       # ダミーイメージをプッシュ
       - name: Push dummy image
         run: |
+          # ECRにログイン
+          aws ecr get-login-password --region ${{ env.AWS_DEFAULT_REGION }} | docker login --username AWS --password-stdin ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_DEFAULT_REGION }}.amazonaws.com
+          
           # 最小限のDockerfileを作成
           echo "FROM public.ecr.aws/lambda/provided:al2" > Dockerfile.dummy
           echo "CMD ['echo', 'dummy']" >> Dockerfile.dummy
