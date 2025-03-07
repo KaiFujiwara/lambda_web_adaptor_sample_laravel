@@ -28,6 +28,9 @@ RUN php artisan key:generate
 # 必要なディレクトリの権限設定
 RUN chmod -R 777 storage bootstrap/cache
 
+# Lambda Web Adapterのコピー
+COPY --from=public.ecr.aws/awsguru/aws-lambda-adapter:0.8.3 /lambda-adapter /opt/extensions/lambda-adapter
+
 EXPOSE 8080
 
 CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8080"]
