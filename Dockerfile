@@ -1,30 +1,31 @@
 FROM php:8.3-apache
 
-# Lambda Web Adaptorをインストール
-COPY --from=public.ecr.aws/awsguru/aws-lambda-adapter:0.5.0 /lambda-adapter /opt/extensions/lambda-adapter
-
-# 必要なPHP拡張機能とツールをインストール
-RUN apt-get update && apt-get install -y \
-    zip \
-    unzip \
-    git \
-    libonig-dev \
-    libxml2-dev \
-    && docker-php-ext-install pdo pdo_mysql mbstring xml
+# 必要なPHP拡張機能のインストール
+RUN docker-php-ext-install pdo_mysql
 
 # Composerのインストール
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Apache設定
-RUN a2enmod rewrite
-RUN sed -i 's/80/8080/g' /etc/apache2/ports.conf
-COPY docker/apache-config.conf /etc/apache2/sites-available/000-default.conf
+# アプリケーションのコピー
+WORKDIR /var/www/html
+COPY src/ .
 
-# エントリーポイントスクリプトの追加
+# 依存関係のインストールå
+RUN composer install --no-dev --optimize-autoloader
+
+# 必要なディレクトリの権限設定
+RUN chown -R www-data:www-data storage bootstrap/cache
+
+# Apacheの設定
+RUN a2enmod rewrite
+COPY docker/apache-config.conf /etc/apache2/sites-available/000-default.conf
+RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
+RUN sed -i 's/Listen 80/Listen 8080/g' /etc/apache2/ports.conf
+
+# エントリーポイントの設定
 COPY docker/entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
-# 環境変数の設定
-ENV PORT=8080
+EXPOSE 8080
 
-ENTRYPOINT ["entrypoint.sh"]
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
