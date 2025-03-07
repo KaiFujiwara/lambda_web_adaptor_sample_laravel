@@ -5,19 +5,14 @@ import * as ecr from 'aws-cdk-lib/aws-ecr';
 import * as path from 'path';
 import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
 
+interface LambdaLaravelStackProps extends cdk.StackProps {
+  repository: ecr.Repository;
+}
+
 export class LambdaLaravelStack extends cdk.Stack {
-  constructor(scope: Construct, id: string, props?: cdk.StackProps) {
+  constructor(scope: Construct, id: string, props: LambdaLaravelStackProps) {
     super(scope, id, props);
 
-    // ECRリポジトリの作成
-    const repository = new ecr.Repository(this, 'LaravelLambdaRepo', {
-      repositoryName: 'laravel-lambda',
-      removalPolicy: cdk.RemovalPolicy.DESTROY,
-    });
-
-    // Docker イメージのビルドパスを指定
-    const dockerFilePath = path.join(__dirname, '../../');
-    
     // アプリケーションの環境変数を Secrets Manager で管理
     const appSecrets = new secretsmanager.Secret(this, 'LaravelAppSecrets', {
       secretName: 'laravel-app-secrets',
@@ -27,11 +22,10 @@ export class LambdaLaravelStack extends cdk.Stack {
     // Lambda関数の作成
     const laravelFunction = new lambda.DockerImageFunction(this, 'LaravelFunction', {
       functionName: 'laravel-function',
-      code: lambda.DockerImageCode.fromEcr(repository),
+      code: lambda.DockerImageCode.fromEcr(props.repository),
       memorySize: 1024,
       timeout: cdk.Duration.seconds(29),
       environment: {
-        // シークレット値を環境変数として参照
         SECRETS_ARN: appSecrets.secretArn,
       },
     });
@@ -53,7 +47,7 @@ export class LambdaLaravelStack extends cdk.Stack {
     });
     
     new cdk.CfnOutput(this, 'ECRRepositoryUri', {
-      value: repository.repositoryUri,
+      value: props.repository.repositoryUri,
       description: 'URI of the ECR repository',
     });
 

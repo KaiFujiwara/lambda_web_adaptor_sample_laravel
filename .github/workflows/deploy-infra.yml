@@ -51,20 +51,24 @@ jobs:
             --verbose \
             --cloudformation-execution-policies 'arn:aws:iam::aws:policy/AdministratorAccess'
 
-      - name: Deploy with CDK
+      - name: Deploy ECR Stack
         env:
           CDK_DEBUG: true
           CDK_DEFAULT_ACCOUNT: ${{ env.AWS_ACCOUNT_ID }}
           CDK_DEFAULT_REGION: ap-northeast-1
-          CDK_STACK_NAME: 'LambdaLaravelStack'
-          DEBUG: 'aws-cdk:*'
-          AWS_VERBOSE_ERROR: true
-          CDK_ASSET_VERBOSE: true
         run: |
           cd cdk
-          npx cdk synth
-          npx cdk deploy '*' \
+          npx cdk deploy 'LaravelEcrStack' \
             --require-approval never \
-            --verbose \
-            --trace \
-            --debug
+            --verbose
+
+      - name: Deploy Lambda Stack
+        env:
+          CDK_DEBUG: true
+          CDK_DEFAULT_ACCOUNT: ${{ env.AWS_ACCOUNT_ID }}
+          CDK_DEFAULT_REGION: ap-northeast-1
+        run: |
+          cd cdk
+          npx cdk deploy 'LambdaLaravelStack' \
+            --require-approval never \
+            --verbose

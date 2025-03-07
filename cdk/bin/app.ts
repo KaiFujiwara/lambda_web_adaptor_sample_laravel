@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import 'source-map-support/register';
 import * as cdk from 'aws-cdk-lib';
+import { EcrStack } from '../lib/ecr-stack';
 import { LambdaLaravelStack } from '../lib/lambda-laravel-stack';
 
 const app = new cdk.App();
@@ -13,23 +14,26 @@ if (!account) {
   throw new Error('CDK_DEFAULT_ACCOUNT environment variable is required');
 }
 
-// スタック名を環境変数から取得するか、デフォルト値を使用
-const stackName = process.env.CDK_STACK_NAME || 'LambdaLaravelStack';
+const env = { 
+  account: account,
+  region: region
+};
 
-// スタックの作成
-const stack = new LambdaLaravelStack(app, stackName, {
-  env: { 
-    account: account,
-    region: region
-  },
-  description: 'Laravel Lambda Application Stack',
-  // スタック名を明示的に設定
-  stackName: stackName
+// ECRスタックを先にデプロイ
+const ecrStack = new EcrStack(app, 'LaravelEcrStack', { env });
+
+// Lambdaスタックは後でデプロイ
+const lambdaStack = new LambdaLaravelStack(app, 'LambdaLaravelStack', {
+  env,
+  repository: ecrStack.repository
 });
 
+// 依存関係を設定
+lambdaStack.addDependency(ecrStack);
+
 // スタックのタグを追加
-cdk.Tags.of(stack).add('Environment', 'Development');
-cdk.Tags.of(stack).add('Project', 'LaravelLambda');
+cdk.Tags.of(lambdaStack).add('Environment', 'Development');
+cdk.Tags.of(lambdaStack).add('Project', 'LaravelLambda');
 
 app.synth(); 
 
