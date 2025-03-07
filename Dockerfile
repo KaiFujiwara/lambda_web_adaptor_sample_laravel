@@ -1,7 +1,12 @@
 FROM php:8.3-apache
 
 # 必要なPHP拡張機能のインストール
-RUN docker-php-ext-install pdo_mysql
+RUN apt-get update && apt-get install -y \
+    git \
+    zip \
+    unzip \
+    libzip-dev \
+&& docker-php-ext-install zip
 
 # Composerのインストール
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
@@ -10,7 +15,7 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 WORKDIR /var/www/html
 COPY src/ .
 
-# 依存関係のインストールå
+# 依存関係のインストール
 RUN composer install --no-dev --optimize-autoloader
 
 # 必要なディレクトリの権限設定
