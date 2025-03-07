@@ -54,11 +54,56 @@ jobs:
           CDK_DEFAULT_REGION: ap-northeast-1
         run: |
           cd cdk
-          # デフォルトの命名規則を使用してブートストラップ
+          # より詳細なブートストラップオプションを指定
           npx cdk bootstrap \
             aws://${{ env.AWS_ACCOUNT_ID }}/ap-northeast-1 \
             --force \
-            --verbose
+            --verbose \
+            --show-template \
+            --cloudformation-execution-policies 'arn:aws:iam::aws:policy/AdministratorAccess' \
+            --template bootstrap-template.yaml
+
+          # ブートストラップテンプレートの内容を確認
+          cat bootstrap-template.yaml || true
+
+      # S3バケットの作成を確認
+      - name: Ensure S3 Bucket Exists
+        run: |
+          BUCKET_NAME="cdk-hnb659fds-assets-${{ env.AWS_ACCOUNT_ID }}-ap-northeast-1"
+          
+          # バケットが存在しない場合は作成
+          if ! aws s3 ls "s3://${BUCKET_NAME}" 2>&1 > /dev/null; then
+            aws s3 mb "s3://${BUCKET_NAME}" --region ap-northeast-1
+            
+            # バケットポリシーを設定
+            cat > bucket-policy.json << EOF
+            {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Principal": {
+                    "AWS": "arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:root"
+                  },
+                  "Action": [
+                    "s3:GetObject*",
+                    "s3:PutObject*",
+                    "s3:List*"
+                  ],
+                  "Resource": [
+                    "arn:aws:s3:::${BUCKET_NAME}",
+                    "arn:aws:s3:::${BUCKET_NAME}/*"
+                  ]
+                }
+              ]
+            }
+            EOF
+            
+            aws s3api put-bucket-policy --bucket ${BUCKET_NAME} --policy file://bucket-policy.json
+          fi
+
+          # バケットの存在を確認
+          aws s3 ls "s3://${BUCKET_NAME}"
 
       # ブートストラップの確認
       - name: Verify Bootstrap
@@ -99,6 +144,17 @@ jobs:
           # CDKアセットバケットの確認
           aws s3 ls s3://cdk-${{ env.AWS_ACCOUNT_ID }}-assets || true
 
+      - name: Verify IAM Permissions
+        run: |
+          # 必要なIAM権限の確認
+          aws iam simulate-principal-policy \
+            --policy-source-arn $(aws sts get-caller-identity --query 'Arn' --output text) \
+            --action-names \
+              s3:PutObject \
+              s3:GetObject \
+              s3:ListBucket \
+              cloudformation:*
+
       - name: Deploy with CDK
         env:
           CDK_DEBUG: true
@@ -107,6 +163,8 @@ jobs:
           CDK_STACK_NAME: ${{ github.event.inputs.environment == 'production' && 'LambdaLaravelStack-Prod' || 'LambdaLaravelStack' }}
           DEBUG: 'aws-cdk:*'
           AWS_VERBOSE_ERROR: true
+          # アセットパブリッシングの詳細ログを有効化
+          CDK_ASSET_VERBOSE: true
         run: |
           cd cdk
           # アセットの事前合成
@@ -117,4 +175,5 @@ jobs:
             --require-approval never \
             --verbose \
             --trace \
-            --debug
+            --debug \
+            --asset-parallelism 1
