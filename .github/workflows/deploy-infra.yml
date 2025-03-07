@@ -28,6 +28,7 @@ jobs:
         run: |
           cd cdk
           npm install
+          npm install source-map-support @types/source-map-support
 
       - name: Deploy with CDK
         run: |
