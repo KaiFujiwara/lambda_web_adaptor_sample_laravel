@@ -18,6 +18,10 @@ COPY src/ .
 # 依存関係のインストール
 RUN composer install --no-dev --optimize-autoloader
 
+# 環境設定ファイルの準備
+COPY src/.env.example .env
+RUN php artisan key:generate
+
 # 必要なディレクトリの権限設定
 RUN chown -R www-data:www-data storage bootstrap/cache
 
