@@ -1,11 +1,12 @@
-FROM php:8.1.17-fpm-alpine3.17
+FROM php:8.3-fpm-alpine3.18
 
 # 必要なPHP拡張機能のインストール
-RUN apt-get update && apt-get install -y \
+RUN apk add --no-cache \
     git \
     zip \
     unzip \
     libzip-dev \
+    $PHPIZE_DEPS \
 && docker-php-ext-install pdo_mysql zip
 
 # Composerのインストール
@@ -16,24 +17,17 @@ WORKDIR /work/web
 
 # アプリケーションのコピー
 COPY ./src /work/web
-RUN mv /work/web/.env.aws.lambda /work/web/.env
+COPY ./src/.env.example /work/web/.env
 
 # 依存関係のインストール
 RUN composer install --no-dev --optimize-autoloader
 
 # 環境設定ファイルの準備
-COPY src/.env.example .env
 RUN php artisan key:generate
 
 # 必要なディレクトリの権限設定
 RUN chmod -R 777 storage bootstrap/cache
 
-# エントリーポイントの設定
-COPY ./docker/php/startup-lambda.sh /usr/local/bin/
-RUN chmod 777 /usr/local/bin/startup-lambda.sh
-
 EXPOSE 8080
 
-ENTRYPOINT ["startup-lambda.sh"]
-
-
+CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8080"]
