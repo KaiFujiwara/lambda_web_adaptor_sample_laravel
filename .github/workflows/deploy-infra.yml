@@ -56,23 +56,28 @@ jobs:
           # CDKブートストラップスタックの状態を確認
           aws cloudformation describe-stacks --stack-name CDKToolkit || true
 
+      - name: Check Stack Status
+        run: |
+          cd cdk
+          # アプリケーションスタックの状態を確認
+          aws cloudformation describe-stacks --stack-name LambdaLaravelStack || true
+          # スタックのイベントを確認
+          aws cloudformation describe-stack-events --stack-name LambdaLaravelStack || true
+
       - name: Deploy with CDK
         env:
           CDK_DEBUG: true
           CDK_DEFAULT_ACCOUNT: ${{ env.AWS_ACCOUNT_ID }}
           CDK_DEFAULT_REGION: ap-northeast-1
+          CDK_STACK_NAME: LambdaLaravelStack
           DEBUG: '*'
         run: |
           cd cdk
-          npm run build
-          # CloudFormationスタックの一覧を確認
-          aws cloudformation list-stacks
-          # CDKの合成出力を確認
-          npx cdk synth
-          # スタック変更の確認（詳細出力）
-          npx cdk diff --trace
-          # デプロイの実行（詳細出力）
-          npx cdk deploy --require-approval never --verbose --trace
+          npx cdk deploy LambdaLaravelStack \
+            --require-approval never \
+            --verbose \
+            --trace \
+            --debug
 
       - name: Build TypeScript
         run: |
