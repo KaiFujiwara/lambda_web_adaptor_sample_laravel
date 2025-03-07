@@ -1,0 +1,20 @@
+{
+  "name": "lambda-laravel-cdk",
+  "version": "0.1.0",
+  "bin": {
+    "cdk": "bin/app.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "cdk": "cdk"
+  },
+  "devDependencies": {
+    "@types/node": "^20.1.0",
+    "aws-cdk": "^2.80.0",
+    "typescript": "~5.0.4"
+  },
+  "dependencies": {
+    "aws-cdk-lib": "^2.80.0",
+    "constructs": "^10.2.0"
+  }
+} 
