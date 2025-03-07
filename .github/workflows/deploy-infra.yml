@@ -63,10 +63,8 @@ jobs:
         run: |
           cd cdk
           npx cdk synth
-          npx cdk deploy \
-            --all \
+          npx cdk deploy '*' \
             --require-approval never \
             --verbose \
             --trace \
-            --debug \
-            --asset-parallelism 1
+            --debug
