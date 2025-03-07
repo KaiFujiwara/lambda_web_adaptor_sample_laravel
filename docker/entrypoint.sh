@@ -6,5 +6,8 @@ if [ ! -f .env ]; then
     php artisan key:generate
 fi
 
+# ストレージディレクトリの権限を設定
+chmod -R 777 storage bootstrap/cache
+
 # Start Apache
 apache2-foreground 

@@ -6,13 +6,13 @@ RUN apt-get update && apt-get install -y \
     zip \
     unzip \
     libzip-dev \
-&& docker-php-ext-install zip
+&& docker-php-ext-install pdo_mysql zip
 
 # Composerのインストール
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 # アプリケーションのコピー
-WORKDIR /var/www/html
+WORKDIR /tmp/app
 COPY src/ .
 
 # 依存関係のインストール
