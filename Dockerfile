@@ -23,13 +23,14 @@ COPY src/.env.example .env
 RUN php artisan key:generate
 
 # 必要なディレクトリの権限設定
-RUN chown -R www-data:www-data storage bootstrap/cache
+RUN chmod -R 777 storage bootstrap/cache
 
 # Apacheの設定
 RUN a2enmod rewrite
 COPY docker/apache-config.conf /etc/apache2/sites-available/000-default.conf
 RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
 RUN sed -i 's/Listen 80/Listen 8080/g' /etc/apache2/ports.conf
+RUN sed -i 's/www-data/root/g' /etc/apache2/envvars
 
 # エントリーポイントの設定
 COPY docker/entrypoint.sh /usr/local/bin/
