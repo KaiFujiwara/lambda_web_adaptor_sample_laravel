@@ -50,6 +50,12 @@ jobs:
           aws iam get-user
           aws sts get-caller-identity
 
+      - name: Check CDK Bootstrap
+        run: |
+          cd cdk
+          # CDKブートストラップスタックの状態を確認
+          aws cloudformation describe-stacks --stack-name CDKToolkit || true
+
       - name: Deploy with CDK
         env:
           CDK_DEBUG: true
@@ -59,7 +65,16 @@ jobs:
         run: |
           cd cdk
           npm run build
-          # スタック変更の確認
-          npx cdk diff || true
-          # デプロイの実行
-          npx cdk deploy --require-approval never --verbose --debug 
+          # CloudFormationスタックの一覧を確認
+          aws cloudformation list-stacks
+          # CDKの合成出力を確認
+          npx cdk synth
+          # スタック変更の確認（詳細出力）
+          npx cdk diff --trace
+          # デプロイの実行（詳細出力）
+          npx cdk deploy --require-approval never --verbose --trace
+
+      - name: Build TypeScript
+        run: |
+          cd cdk
+          npm run build -- --verbose 
