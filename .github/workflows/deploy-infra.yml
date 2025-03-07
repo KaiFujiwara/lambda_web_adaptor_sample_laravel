@@ -96,8 +96,3 @@ jobs:
             --debug \
             --exclusively \
             --asset-parallelism 1
-
-      - name: Build TypeScript
-        run: |
-          cd cdk
-          npm run build -- --verbose 
