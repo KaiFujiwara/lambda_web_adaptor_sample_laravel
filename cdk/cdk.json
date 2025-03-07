@@ -1,5 +1,7 @@
 {
   "app": "npx ts-node --prefer-ts-exts bin/app.ts",
+  "debug": true,
+  "trace": true,
   "watch": {
     "include": [
       "**"

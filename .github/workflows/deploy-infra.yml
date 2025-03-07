@@ -44,12 +44,22 @@ jobs:
           cd cdk
           npx cdk bootstrap aws://${{ env.AWS_ACCOUNT_ID }}/ap-northeast-1
 
+      # IAM権限の確認
+      - name: Check IAM permissions
+        run: |
+          aws iam get-user
+          aws sts get-caller-identity
+
       - name: Deploy with CDK
         env:
           CDK_DEBUG: true
           CDK_DEFAULT_ACCOUNT: ${{ env.AWS_ACCOUNT_ID }}
           CDK_DEFAULT_REGION: ap-northeast-1
+          DEBUG: '*'
         run: |
           cd cdk
           npm run build
-          npx cdk deploy --require-approval never --verbose 
+          # スタック変更の確認
+          npx cdk diff || true
+          # デプロイの実行
+          npx cdk deploy --require-approval never --verbose --debug 

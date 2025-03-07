@@ -59,5 +59,21 @@ export class LambdaLaravelStack extends cdk.Stack {
 
     // シークレットへのアクセス権限をLambda関数に付与
     appSecrets.grantRead(laravelFunction);
+
+    // スタックの出力を強制的に表示
+    new cdk.CfnOutput(this, 'StackName', {
+      value: this.stackName,
+      description: 'Stack name',
+    });
+
+    new cdk.CfnOutput(this, 'Region', {
+      value: this.region,
+      description: 'Stack region',
+    });
+
+    new cdk.CfnOutput(this, 'Account', {
+      value: this.account,
+      description: 'Stack account',
+    });
   }
 } 
