@@ -52,51 +52,9 @@ jobs:
             --show-template \
             --cloudformation-execution-policies 'arn:aws:iam::aws:policy/AdministratorAccess'
 
-      # S3バケットの作成を確認
-      - name: Ensure S3 Bucket Exists
-        run: |
-          BUCKET_NAME="cdk-hnb659fds-assets-${{ env.AWS_ACCOUNT_ID }}-ap-northeast-1"
-          
-          # バケットが存在しない場合は作成
-          if ! aws s3 ls "s3://${BUCKET_NAME}" 2>&1 > /dev/null; then
-            aws s3 mb "s3://${BUCKET_NAME}" --region ap-northeast-1
-            
-            # バケットポリシーを設定
-            cat > bucket-policy.json << EOF
-            {
-              "Version": "2012-10-17",
-              "Statement": [
-                {
-                  "Effect": "Allow",
-                  "Principal": {
-                    "AWS": "arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:root"
-                  },
-                  "Action": [
-                    "s3:GetObject*",
-                    "s3:PutObject*",
-                    "s3:List*"
-                  ],
-                  "Resource": [
-                    "arn:aws:s3:::${BUCKET_NAME}",
-                    "arn:aws:s3:::${BUCKET_NAME}/*"
-                  ]
-                }
-              ]
-            }
-            EOF
-            
-            aws s3api put-bucket-policy --bucket ${BUCKET_NAME} --policy file://bucket-policy.json
-          fi
-
-          # バケットの存在を確認
-          aws s3 ls "s3://${BUCKET_NAME}"
-
       # ブートストラップの確認
       - name: Verify Bootstrap
         run: |
-          # ブートストラップバケットの存在確認
-          aws s3 ls s3://cdk-hnb659fds-assets-${{ env.AWS_ACCOUNT_ID }}-ap-northeast-1 || true
-          
           # CloudFormationスタックの確認
           aws cloudformation describe-stacks \
             --stack-name CDKToolkit \
