@@ -8,5 +8,5 @@ cd /tmp/app
 # ストレージディレクトリの権限を設定
 chmod -R 777 storage bootstrap/cache
 
-# Start Apache
-apache2-foreground 
+# Start PHP Built-in Server
+php artisan serve --host=0.0.0.0 --port=8080 
