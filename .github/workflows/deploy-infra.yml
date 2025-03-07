@@ -5,18 +5,8 @@ on:
     branches: [ main ]
     paths:
       - 'cdk/**'
-  # 手動実行を追加
+  # シンプルな手動実行トリガー
   workflow_dispatch:
-    inputs:
-      environment:
-        description: 'Environment to deploy to'
-        required: true
-        default: 'development'
-        type: choice
-        options:
-          - development
-          - staging
-          - production
 
 jobs:
   deploy:
@@ -54,17 +44,13 @@ jobs:
           CDK_DEFAULT_REGION: ap-northeast-1
         run: |
           cd cdk
-          # より詳細なブートストラップオプションを指定
+          # ブートストラップテンプレートを表示して実行
           npx cdk bootstrap \
             aws://${{ env.AWS_ACCOUNT_ID }}/ap-northeast-1 \
             --force \
             --verbose \
             --show-template \
-            --cloudformation-execution-policies 'arn:aws:iam::aws:policy/AdministratorAccess' \
-            --template bootstrap-template.yaml
-
-          # ブートストラップテンプレートの内容を確認
-          cat bootstrap-template.yaml || true
+            --cloudformation-execution-policies 'arn:aws:iam::aws:policy/AdministratorAccess'
 
       # S3バケットの作成を確認
       - name: Ensure S3 Bucket Exists
@@ -160,16 +146,13 @@ jobs:
           CDK_DEBUG: true
           CDK_DEFAULT_ACCOUNT: ${{ env.AWS_ACCOUNT_ID }}
           CDK_DEFAULT_REGION: ap-northeast-1
-          CDK_STACK_NAME: ${{ github.event.inputs.environment == 'production' && 'LambdaLaravelStack-Prod' || 'LambdaLaravelStack' }}
+          CDK_STACK_NAME: 'LambdaLaravelStack'  # 固定のスタック名を使用
           DEBUG: 'aws-cdk:*'
           AWS_VERBOSE_ERROR: true
-          # アセットパブリッシングの詳細ログを有効化
           CDK_ASSET_VERBOSE: true
         run: |
           cd cdk
-          # アセットの事前合成
           npx cdk synth
-          # デプロイの実行（アセットの公開を含む）
           npx cdk deploy \
             --all \
             --require-approval never \
