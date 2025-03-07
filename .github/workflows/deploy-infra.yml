@@ -54,11 +54,23 @@ jobs:
           CDK_DEFAULT_REGION: ap-northeast-1
         run: |
           cd cdk
-          # 強制的に再ブートストラップ
-          npx cdk bootstrap aws://${{ env.AWS_ACCOUNT_ID }}/ap-northeast-1 \
+          # デフォルトの命名規則を使用してブートストラップ
+          npx cdk bootstrap \
+            aws://${{ env.AWS_ACCOUNT_ID }}/ap-northeast-1 \
             --force \
-            --bootstrap-bucket-name cdk-${{ env.AWS_ACCOUNT_ID }}-assets \
             --verbose
+
+      # ブートストラップの確認
+      - name: Verify Bootstrap
+        run: |
+          # ブートストラップバケットの存在確認
+          aws s3 ls s3://cdk-hnb659fds-assets-${{ env.AWS_ACCOUNT_ID }}-ap-northeast-1 || true
+          
+          # CloudFormationスタックの確認
+          aws cloudformation describe-stacks \
+            --stack-name CDKToolkit \
+            --query 'Stacks[0].Outputs[?OutputKey==`BucketName`].OutputValue' \
+            --output text
 
       # IAM権限の確認
       - name: Check IAM permissions
@@ -92,14 +104,14 @@ jobs:
           CDK_DEBUG: true
           CDK_DEFAULT_ACCOUNT: ${{ env.AWS_ACCOUNT_ID }}
           CDK_DEFAULT_REGION: ap-northeast-1
-          CDK_STACK_NAME: LambdaLaravelStack
+          CDK_STACK_NAME: ${{ github.event.inputs.environment == 'production' && 'LambdaLaravelStack-Prod' || 'LambdaLaravelStack' }}
           DEBUG: 'aws-cdk:*'
           AWS_VERBOSE_ERROR: true
         run: |
           cd cdk
           # アセットの事前合成
           npx cdk synth
-          # デプロイの実行
+          # デプロイの実行（アセットの公開を含む）
           npx cdk deploy \
             --all \
             --require-approval never \
