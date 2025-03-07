@@ -13,5 +13,16 @@ export class EcrStack extends cdk.Stack {
       repositoryName: 'laravel-lambda',
       removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
+
+    // Lambdaからのプル権限を追加
+    this.repository.addToResourcePolicy(new cdk.aws_iam.PolicyStatement({
+      effect: cdk.aws_iam.Effect.ALLOW,
+      principals: [new cdk.aws_iam.ServicePrincipal('lambda.amazonaws.com')],
+      actions: [
+        'ecr:BatchCheckLayerAvailability',
+        'ecr:BatchGetImage',
+        'ecr:GetDownloadUrlForLayer'
+      ]
+    }));
   }
 } 

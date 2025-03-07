@@ -22,7 +22,10 @@ export class LambdaLaravelStack extends cdk.Stack {
     // Lambda関数の作成
     const laravelFunction = new lambda.DockerImageFunction(this, 'LaravelFunction', {
       functionName: 'laravel-function',
-      code: lambda.DockerImageCode.fromEcr(props.repository),
+      code: lambda.DockerImageCode.fromEcr(props.repository, {
+        tagOrDigest: 'latest',
+        cmd: ['dummy'], // デフォルトのコマンドを設定
+      }),
       memorySize: 1024,
       timeout: cdk.Duration.seconds(29),
       environment: {
@@ -53,6 +56,9 @@ export class LambdaLaravelStack extends cdk.Stack {
 
     // シークレットへのアクセス権限をLambda関数に付与
     appSecrets.grantRead(laravelFunction);
+
+    // ECRへのプル権限を追加
+    props.repository.grantPull(laravelFunction);
 
     // スタックの出力を強制的に表示
     new cdk.CfnOutput(this, 'StackName', {
