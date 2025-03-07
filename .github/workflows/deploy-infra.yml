@@ -22,13 +22,13 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '22'
+          node-version: '16'
 
       - name: Install CDK dependencies
         run: |
           cd cdk
+          rm -rf node_modules package-lock.json
           npm install
-          npm install source-map-support @types/source-map-support
 
       - name: Bootstrap CDK
         run: |
