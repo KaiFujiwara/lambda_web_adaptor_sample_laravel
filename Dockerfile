@@ -8,6 +8,9 @@ RUN apt-get update && apt-get install -y \
     libzip-dev \
 && docker-php-ext-install pdo_mysql zip
 
+# Lambdaユーザーの作成
+RUN useradd -r -s /bin/false lambda
+
 # Composerのインストール
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
@@ -23,14 +26,14 @@ COPY src/.env.example .env
 RUN php artisan key:generate
 
 # 必要なディレクトリの権限設定
-RUN chmod -R 777 storage bootstrap/cache
+RUN chown -R lambda:lambda /var/task
 
 # Apacheの設定
 RUN a2enmod rewrite
 COPY docker/apache-config.conf /etc/apache2/sites-available/000-default.conf
 RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
 RUN sed -i 's/Listen 80/Listen 8080/g' /etc/apache2/ports.conf
-RUN sed -i 's/www-data/root/g' /etc/apache2/envvars
+RUN sed -i 's/www-data/lambda/g' /etc/apache2/envvars
 
 # エントリーポイントの設定
 COPY docker/entrypoint.sh /usr/local/bin/
