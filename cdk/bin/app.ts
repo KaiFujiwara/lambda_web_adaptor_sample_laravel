@@ -6,7 +6,10 @@ import { LambdaLaravelStack } from '../lib/lambda-laravel-stack';
 const app = new cdk.App();
 new LambdaLaravelStack(app, 'LambdaLaravelStack', {
   env: { 
-    account: process.env.CDK_DEFAULT_ACCOUNT, 
-    region: process.env.CDK_DEFAULT_REGION || 'ap-northeast-1' 
+    account: process.env.AWS_ACCOUNT_ID,
+    region: 'ap-northeast-1'
   },
-}); 
+  description: 'Laravel Lambda Application Stack',
+});
+
+app.synth(); 

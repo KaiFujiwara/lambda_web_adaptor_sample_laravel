@@ -30,8 +30,15 @@ jobs:
           npm install
           npm install source-map-support @types/source-map-support
 
+      - name: Bootstrap CDK
+        run: |
+          cd cdk
+          npx cdk bootstrap aws://${{ secrets.AWS_ACCOUNT_ID }}/ap-northeast-1
+
       - name: Deploy with CDK
+        env:
+          CDK_DEBUG: true
         run: |
           cd cdk
           npm run build
-          npx cdk deploy --require-approval never 
+          npx cdk deploy --require-approval never --verbose 
