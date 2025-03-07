@@ -62,6 +62,17 @@ jobs:
             --require-approval never \
             --verbose
 
+      # ダミーイメージをプッシュ
+      - name: Push dummy image
+        run: |
+          # 最小限のDockerfileを作成
+          echo "FROM public.ecr.aws/lambda/provided:al2" > Dockerfile.dummy
+          echo "CMD ['echo', 'dummy']" >> Dockerfile.dummy
+          
+          # ダミーイメージをビルドしてプッシュ
+          docker build -f Dockerfile.dummy -t ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_DEFAULT_REGION }}.amazonaws.com/laravel-lambda:latest .
+          docker push ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_DEFAULT_REGION }}.amazonaws.com/laravel-lambda:latest
+
       - name: Deploy Lambda Stack
         env:
           CDK_DEBUG: true
