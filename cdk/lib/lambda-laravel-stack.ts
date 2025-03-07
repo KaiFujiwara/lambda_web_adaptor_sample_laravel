@@ -9,7 +9,7 @@ export class LambdaLaravelStack extends cdk.Stack {
     super(scope, id, props);
 
     // ECRリポジトリの作成
-    const repository = new ecr.Repository(this, 'LaravelRepository', {
+    const repository = new ecr.Repository(this, 'LaravelLambdaRepo', {
       repositoryName: 'laravel-lambda',
       removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
