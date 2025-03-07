@@ -12,16 +12,27 @@ export class EcrStack extends cdk.Stack {
     this.repository = new ecr.Repository(this, 'LaravelLambdaRepo', {
       repositoryName: 'laravel-lambda',
       removalPolicy: cdk.RemovalPolicy.DESTROY,
+      // イメージスキャンを有効化
+      imageScanOnPush: true,
+      // タグの上書きを許可
+      imageTagMutability: ecr.TagMutability.MUTABLE
     });
 
     // Lambdaからのプル権限を追加
     this.repository.addToResourcePolicy(new cdk.aws_iam.PolicyStatement({
       effect: cdk.aws_iam.Effect.ALLOW,
-      principals: [new cdk.aws_iam.ServicePrincipal('lambda.amazonaws.com')],
+      principals: [
+        new cdk.aws_iam.ServicePrincipal('lambda.amazonaws.com'),
+        new cdk.aws_iam.AccountRootPrincipal()
+      ],
       actions: [
-        'ecr:BatchCheckLayerAvailability',
+        'ecr:GetDownloadUrlForLayer',
         'ecr:BatchGetImage',
-        'ecr:GetDownloadUrlForLayer'
+        'ecr:BatchCheckLayerAvailability',
+        'ecr:PutImage',
+        'ecr:InitiateLayerUpload',
+        'ecr:UploadLayerPart',
+        'ecr:CompleteLayerUpload'
       ]
     }));
   }

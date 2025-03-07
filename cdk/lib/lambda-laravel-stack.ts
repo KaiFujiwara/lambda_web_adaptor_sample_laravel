@@ -24,13 +24,19 @@ export class LambdaLaravelStack extends cdk.Stack {
       functionName: 'laravel-function',
       code: lambda.DockerImageCode.fromEcr(props.repository, {
         tagOrDigest: 'latest',
-        cmd: ['dummy'], // デフォルトのコマンドを設定
       }),
       memorySize: 1024,
       timeout: cdk.Duration.seconds(29),
       environment: {
         SECRETS_ARN: appSecrets.secretArn,
       },
+      // 初期デプロイ時のイメージチェックをスキップ
+      skipValidation: true,
+      // 初期デプロイ時のダミーイメージを指定
+      imageConfig: {
+        entryPoint: ['/bin/sh', '-c'],
+        command: ['echo "Placeholder image"'],
+      }
     });
     
     // Lambda関数URLの作成
