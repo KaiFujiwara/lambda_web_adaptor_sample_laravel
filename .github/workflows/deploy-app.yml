@@ -7,6 +7,17 @@ on:
       - 'src/**'
       - 'Dockerfile'
       - 'docker/**'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to deploy'
+        required: false
+        default: 'latest'
+      force_deploy:
+        description: 'Force deployment'
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   deploy:

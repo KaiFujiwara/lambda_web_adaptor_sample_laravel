@@ -5,6 +5,18 @@ on:
     branches: [ main ]
     paths:
       - 'cdk/**'
+  # 手動実行を追加
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'development'
+        type: choice
+        options:
+          - development
+          - staging
+          - production
 
 jobs:
   deploy:
