@@ -44,67 +44,19 @@ jobs:
           CDK_DEFAULT_REGION: ap-northeast-1
         run: |
           cd cdk
-          # ブートストラップテンプレートを表示して実行
+          # ブートストラップの実行
           npx cdk bootstrap \
             aws://${{ env.AWS_ACCOUNT_ID }}/ap-northeast-1 \
             --force \
             --verbose \
-            --show-template \
             --cloudformation-execution-policies 'arn:aws:iam::aws:policy/AdministratorAccess'
-
-      # ブートストラップの確認
-      - name: Verify Bootstrap
-        run: |
-          # CloudFormationスタックの確認
-          aws cloudformation describe-stacks \
-            --stack-name CDKToolkit \
-            --query 'Stacks[0].Outputs[?OutputKey==`BucketName`].OutputValue' \
-            --output text
-
-      # IAM権限の確認
-      - name: Check IAM permissions
-        run: |
-          aws iam get-user
-          aws sts get-caller-identity
-
-      - name: Check CDK Bootstrap
-        run: |
-          cd cdk
-          # CDKブートストラップスタックの状態を確認
-          aws cloudformation describe-stacks --stack-name CDKToolkit || true
-
-      - name: Check Stack Status
-        run: |
-          cd cdk
-          # アプリケーションスタックの状態を確認
-          aws cloudformation describe-stacks --stack-name LambdaLaravelStack || true
-          # スタックのイベントを確認
-          aws cloudformation describe-stack-events --stack-name LambdaLaravelStack || true
-
-      - name: Verify S3 Permissions
-        run: |
-          # S3バケットの一覧表示
-          aws s3 ls
-          # CDKアセットバケットの確認
-          aws s3 ls s3://cdk-${{ env.AWS_ACCOUNT_ID }}-assets || true
-
-      - name: Verify IAM Permissions
-        run: |
-          # 必要なIAM権限の確認
-          aws iam simulate-principal-policy \
-            --policy-source-arn $(aws sts get-caller-identity --query 'Arn' --output text) \
-            --action-names \
-              s3:PutObject \
-              s3:GetObject \
-              s3:ListBucket \
-              cloudformation:*
 
       - name: Deploy with CDK
         env:
           CDK_DEBUG: true
           CDK_DEFAULT_ACCOUNT: ${{ env.AWS_ACCOUNT_ID }}
           CDK_DEFAULT_REGION: ap-northeast-1
-          CDK_STACK_NAME: 'LambdaLaravelStack'  # 固定のスタック名を使用
+          CDK_STACK_NAME: 'LambdaLaravelStack'
           DEBUG: 'aws-cdk:*'
           AWS_VERBOSE_ERROR: true
           CDK_ASSET_VERBOSE: true
