@@ -81,18 +81,16 @@ jobs:
           CDK_DEFAULT_ACCOUNT: ${{ env.AWS_ACCOUNT_ID }}
           CDK_DEFAULT_REGION: ap-northeast-1
           CDK_STACK_NAME: LambdaLaravelStack
-          DEBUG: '*'
-          # アセット公開の詳細ログを有効化
+          DEBUG: 'aws-cdk:*'
           AWS_VERBOSE_ERROR: true
         run: |
           cd cdk
           # アセットの事前合成
           npx cdk synth
-          # アセットの公開を試行
-          npx cdk deploy LambdaLaravelStack \
+          # デプロイの実行
+          npx cdk deploy \
+            --all \
             --require-approval never \
             --verbose \
             --trace \
-            --debug \
-            --exclusively \
-            --asset-parallelism 1
+            --debug

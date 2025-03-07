@@ -32,4 +32,3 @@ cdk.Tags.of(stack).add('Environment', 'Development');
 cdk.Tags.of(stack).add('Project', 'LaravelLambda');
 
 app.synth(); 
-
