@@ -31,8 +31,8 @@ export class LambdaLaravelStack extends cdk.Stack {
       memorySize: 1024,
       timeout: cdk.Duration.seconds(29),
       environment: {
-        APP_KEY: appSecrets.secretValueFromJson('APP_KEY').toString(),
-        // 必要に応じて他の環境変数を追加
+        // シークレット値を環境変数として参照
+        SECRETS_ARN: appSecrets.secretArn,
       },
     });
     
