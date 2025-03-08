@@ -13,14 +13,7 @@ docker build -t laravel-lambda .
 docker run -d -p 8080:8080 -v $(pwd)/src:/var/www/html --name laravel-container laravel-lambda
 ```
 
-### 2. 権限の設定
-```bash
-# ストレージディレクトリの権限を設定
-docker exec -it laravel-container bash -c "chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache"
-docker exec -it laravel-container bash -c "chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache"
-```
-
-### 3. 動作確認
+### 2. 動作確認
 ブラウザで http://localhost:8080 にアクセスし、Laravelのウェルカムページが表示されることを確認します。
 
 ## GitHub Actionsを使った自動デプロイ

@@ -28,4 +28,4 @@ jobs:
         run: sam build
 
       - name: Deploy with SAM
-        run: sam deploy --no-confirm-changeset --no-fail-on-empty-changeset --guided 
+        run: sam deploy --no-confirm-changeset --no-fail-on-empty-changeset 
