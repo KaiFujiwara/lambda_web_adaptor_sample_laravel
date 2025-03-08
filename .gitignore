@@ -1,5 +1,5 @@
 /src/vendor
 /src/node_modules
 /src/.env
-/cdk/node_modules
-/cdk/package-lock.json
+.aws-sam/
+samconfig.toml

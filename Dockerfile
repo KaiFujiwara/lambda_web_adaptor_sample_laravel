@@ -37,17 +37,7 @@ ADD docker/php/php.ini         /opt/php/php.ini
 ADD docker/php/etc/php-fpm.conf /opt/php/etc/php-fpm.conf
 ADD docker/php/php.d/extensions.ini /opt/php/php.d/extensions.ini
 
-# 設定ファイルのパスの修正（存在しない場合）
-RUN if [ ! -f /opt/nginx/conf/mime.types ]; then \
-        mkdir -p /opt/nginx/conf && \
-        cp -n /etc/nginx/mime.types /opt/nginx/conf/ 2>/dev/null || echo "Mime types not found"; \
-    fi
-
 COPY bootstrap /opt/bootstrap
 RUN chmod +x /opt/bootstrap
-
-# 実行環境でもストレージディレクトリの権限を設定
-RUN chmod -R 777 /var/task/app/storage /var/task/app/bootstrap/cache \
-    && chmod -R 777 /var/task/app/database
 
 ENTRYPOINT ["/opt/bootstrap"]
