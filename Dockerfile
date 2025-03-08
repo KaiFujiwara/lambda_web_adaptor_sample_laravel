@@ -1,36 +1,53 @@
-FROM php:8.3-fpm-alpine3.18
+FROM public.ecr.aws/awsguru/php:82.2023.3.11.1 AS builder
+COPY --from=composer /usr/bin/composer /usr/local/bin/composer
 
-# 必要なPHP拡張機能のインストール
-RUN apk add --no-cache \
-    git \
-    zip \
-    unzip \
-    libzip-dev \
-    $PHPIZE_DEPS \
-&& docker-php-ext-install pdo_mysql zip
+# SQLite拡張のインストール
+RUN yum install -y sqlite-devel \
+    && echo "extension=pdo_sqlite.so" > /opt/php/php.d/20-pdo_sqlite.ini \
+    && echo "extension=sqlite3.so" > /opt/php/php.d/20-sqlite3.ini \
+    && yum clean all
 
-# Composerのインストール
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+COPY src /var/task/app
+WORKDIR /var/task/app
 
-# ワーキングディレクトリを設定
-WORKDIR /work/web
+RUN composer install --prefer-dist --optimize-autoloader --no-dev --no-interaction
 
-# アプリケーションのコピー
-COPY ./src /work/web
-COPY ./src/.env.example /work/web/.env
+# ストレージディレクトリの権限設定
+RUN mkdir -p /var/task/app/storage/framework/{sessions,views,cache} \
+    && mkdir -p /var/task/app/storage/logs \
+    && mkdir -p /var/task/app/database \
+    && chmod -R 777 /var/task/app/storage /var/task/app/bootstrap/cache \
+    && chmod -R 777 /var/task/app/database \
+    && touch /var/task/app/database/database.sqlite \
+    && chmod 666 /var/task/app/database/database.sqlite
 
-# 依存関係のインストール
-RUN composer install --no-dev --optimize-autoloader
+FROM public.ecr.aws/awsguru/php:82.2023.3.11.1
+# SQLite拡張のインストール
+RUN yum install -y sqlite-devel \
+    && echo "extension=pdo_sqlite.so" > /opt/php/php.d/20-pdo_sqlite.ini \
+    && echo "extension=sqlite3.so" > /opt/php/php.d/20-sqlite3.ini \
+    && yum clean all
 
-# 環境設定ファイルの準備
-RUN php artisan key:generate
+COPY --from=public.ecr.aws/awsguru/aws-lambda-adapter:0.9.0 /lambda-adapter /opt/extensions/lambda-adapter
+COPY --from=builder /var/task /var/task
 
-# 必要なディレクトリの権限設定
-RUN chmod -R 777 storage bootstrap/cache
+# config files
+ADD docker/nginx.conf          /opt/nginx/conf/nginx.conf
+ADD docker/php/php.ini         /opt/php/php.ini
+ADD docker/php/etc/php-fpm.conf /opt/php/etc/php-fpm.conf
+ADD docker/php/php.d/extensions.ini /opt/php/php.d/extensions.ini
 
-# Lambda Web Adapterのコピー
-COPY --from=public.ecr.aws/awsguru/aws-lambda-adapter:0.8.3 /lambda-adapter /opt/extensions/lambda-adapter
+# 設定ファイルのパスの修正（存在しない場合）
+RUN if [ ! -f /opt/nginx/conf/mime.types ]; then \
+        mkdir -p /opt/nginx/conf && \
+        cp -n /etc/nginx/mime.types /opt/nginx/conf/ 2>/dev/null || echo "Mime types not found"; \
+    fi
 
-EXPOSE 8080
+COPY bootstrap /opt/bootstrap
+RUN chmod +x /opt/bootstrap
 
-CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8080"]
+# 実行環境でもストレージディレクトリの権限を設定
+RUN chmod -R 777 /var/task/app/storage /var/task/app/bootstrap/cache \
+    && chmod -R 777 /var/task/app/database
+
+ENTRYPOINT ["/opt/bootstrap"]
