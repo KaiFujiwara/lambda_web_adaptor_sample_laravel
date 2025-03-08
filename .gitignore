@@ -1,4 +1,4 @@
 /src/vendor
 /src/node_modules
 /src/.env
-.aws-sam/samconfig.toml
+.aws-sam/
