@@ -1,43 +1,26 @@
-FROM public.ecr.aws/awsguru/php:82.2023.3.11.1 AS builder
-COPY --from=composer /usr/bin/composer /usr/local/bin/composer
+# ---------- build stage ----------
+FROM public.ecr.aws/docker/library/php:8.3-cli-alpine AS build
+RUN apk add --no-cache git unzip oniguruma-dev \
+    && curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/bin --filename=composer
+WORKDIR /var/task
+COPY src/ .
 
-# SQLite拡張のインストール
-RUN yum install -y sqlite-devel \
-    && echo "extension=pdo_sqlite.so" > /opt/php/php.d/20-pdo_sqlite.ini \
-    && echo "extension=sqlite3.so" > /opt/php/php.d/20-sqlite3.ini \
-    && yum clean all
+# lambdaはtmp以外に書き込めないので、書き込み先を変更
+RUN cp .env.example .env \
+&& sed -i 's/^SESSION_DRIVER=.*/SESSION_DRIVER=cookie/' .env \
+&& sed -i 's/^LOG_CHANNEL=.*/LOG_CHANNEL=stderr/' .env \
+&& composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist \
+&& php artisan key:generate --ansi \
+&& php artisan optimize
 
-COPY src /var/task/app
-WORKDIR /var/task/app
+# ---------- runtime --------------
+FROM public.ecr.aws/docker/library/php:8.3-cli-alpine
+# Lambda Web Adapter
+COPY --from=public.ecr.aws/awsguru/aws-lambda-adapter:0.9.1 \
+        /lambda-adapter /opt/extensions/lambda-adapter
+# アプリ本体
+COPY --from=build /var/task /var/task
+WORKDIR /var/task
 
-RUN composer install --prefer-dist --optimize-autoloader --no-dev --no-interaction
-
-# ストレージディレクトリの権限設定
-RUN mkdir -p /var/task/app/storage/framework/{sessions,views,cache} \
-    && mkdir -p /var/task/app/storage/logs \
-    && mkdir -p /var/task/app/database \
-    && chmod -R 777 /var/task/app/storage /var/task/app/bootstrap/cache \
-    && chmod -R 777 /var/task/app/database \
-    && touch /var/task/app/database/database.sqlite \
-    && chmod 666 /var/task/app/database/database.sqlite
-
-FROM public.ecr.aws/awsguru/php:82.2023.3.11.1
-# SQLite拡張のインストール
-RUN yum install -y sqlite-devel \
-    && echo "extension=pdo_sqlite.so" > /opt/php/php.d/20-pdo_sqlite.ini \
-    && echo "extension=sqlite3.so" > /opt/php/php.d/20-sqlite3.ini \
-    && yum clean all
-
-COPY --from=public.ecr.aws/awsguru/aws-lambda-adapter:0.9.0 /lambda-adapter /opt/extensions/lambda-adapter
-COPY --from=builder /var/task /var/task
-
-# config files
-ADD docker/nginx.conf          /opt/nginx/conf/nginx.conf
-ADD docker/php/php.ini         /opt/php/php.ini
-ADD docker/php/etc/php-fpm.conf /opt/php/etc/php-fpm.conf
-ADD docker/php/php.d/extensions.ini /opt/php/php.d/extensions.ini
-
-COPY bootstrap /opt/bootstrap
-RUN chmod +x /opt/bootstrap
-
-ENTRYPOINT ["/opt/bootstrap"]
+EXPOSE 8080
+CMD ["php", "-d", "variables_order=EGPCS", "-S", "0.0.0.0:8080", "-t", "public"]

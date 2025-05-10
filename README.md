@@ -4,44 +4,35 @@ AWS Lambda Web Adaptorを使用してLaravelアプリケーションをサーバ
 
 ## ローカル環境のセットアップ手順
 
-### 1. Dockerイメージのビルドと実行
-```bash 
-# イメージをビルド
-docker build -t laravel-lambda .
+### 1. ローカル環境設定
+```bash
+cd src
+cp .env.example .env
+php artisan key:generate
+```
 
-# コンテナを起動（srcディレクトリをマウント）
-docker run -d -p 8080:8080 -v $(pwd)/src:/var/www/html --name laravel-container laravel-lambda
+### 2. Dockerイメージのビルドと実行
+```bash 
+docker build -t laravel-lwa:latest .
+docker run -p 8080:8080 laravel-lwa:latest
 ```
 
 ### 2. 動作確認
 ブラウザで http://localhost:8080 にアクセスし、Laravelのウェルカムページが表示されることを確認します。
 
-## GitHub Actionsを使った自動デプロイ
+## AWSへのデプロイ
 
-このプロジェクトは2つのGitHub Actionsワークフローを使用しています：
+### 1. 事前準備
+ローカル環境でAWS CLIが使える状態にしておく。
 
-1. アプリケーションのデプロイ（`deploy-app.yml`）
-   - `src/`ディレクトリ
-   - `Dockerfile`
-   - `docker/`ディレクトリ
-   の変更時に実行
+### 2. ECRリポジトリの作成
+AWSのコンソール画面からECRリポジトリを作成する。
+リポジトリ作成後、「プッシュコマンドを表示」より、コマンドをコピーしてローカル環境で実行する。
 
-2. インフラのデプロイ（`deploy-infra.yml`）
-   - `cdk/`ディレクトリの変更時に実行
+### 3. Lambda関数の作成
+AWSのコンソール画面でLambda関数を作成する。
+オプションはコンテナイメージで、2で作成したリポジトリを指定する。
+作成後、設定>関数URLを有効にする。
 
-### 1. 設定手順
-
-1. GitHubリポジトリのSettings > Secrets and variables > Actionsに以下を設定：
-   - `AWS_ACCESS_KEY_ID`: AWSのアクセスキーID
-   - `AWS_SECRET_ACCESS_KEY`: AWSのシークレットアクセスキー
-
-2. mainブランチにプッシュすると、変更されたコンポーネントに応じて自動的にデプロイが実行されます。
-
-### 2. 動作確認
-出力されたLambda関数のURLにアクセスし、Laravelのウェルカムページが表示されることを確認します。
-
-## 注意事項
-- srcディレクトリはホストマシンとコンテナ間で共有されます
-- コンテナを再起動してもソースコードは保持されます
-- 本番環境用の.envファイルは適切に管理し、機密情報を含む場合は暗号化するなどの対策を行ってください
-
+### 4. 動作確認
+3で作成した関数のURLにアクセスし、Laravelのウェルカムページが表示されることを確認する。
